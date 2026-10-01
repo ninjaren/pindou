@@ -101,8 +101,8 @@ def quantize_image(image, num_colors=12):
 
 def smooth_color_blocks(image):
     """
-    量化後多跨一道 Median Filter，將細瓣的色塊邊緣整合。
-    有效修復竏齒所產生的中間色。
+    量化後多跑一道 Median Filter，將細碎的色塊邊緣整合。
+    有效修復鋸齒所產生的中間色。
     """
     return image.filter(ImageFilter.MedianFilter(size=3))
 
@@ -111,8 +111,8 @@ def remove_noise_from_palette_map(palette_map, grid_width, grid_height, palette,
     """
     後處理：將孤立的鑑點格子替換成周圍多數色。
 
-    原理：對每個格子檢查屄8鄰主的同色數長，
-    導果 < strength，則視為雜點，替換成鄰主最多數色。
+    原理：對每個格子檢查 8 鄰居的同色數量，
+    如果 < strength，則視為雜點，替換成鄰居中最多數色。
 
     參數:
     - strength: 導果同色鄰居數小於此値則替換（預設 2）
@@ -272,7 +272,7 @@ def build_color_statistics(color_counter, palette=None):
 
 def merge_similar_colors(palette_map, color_statistics, threshold_pct, palette=None):
     """
-    將相似色廚展在閖値內的顏色合併成使用量較大的那個，減少实際用色種類。
+    將相似色距離在閾值內的顏色合併成使用量較大的那個，減少實際用色種類。
 
     參數:
     - threshold_pct: 0-100，越大合併越濃。0 = 停用
@@ -283,7 +283,7 @@ def merge_similar_colors(palette_map, color_statistics, threshold_pct, palette=N
     if threshold_pct <= 0 or not color_statistics:
         return palette_map, color_statistics
 
-    # Redmean 最大距離（白 → 黑）約 765，戆20-100 映射到有意義的區間
+    # Redmean 最大距離（白 → 黑）約 765，將 0-100 映射到有意義的距離區間
     max_dist = 765.0
     threshold_dist = threshold_pct / 100.0 * max_dist
 

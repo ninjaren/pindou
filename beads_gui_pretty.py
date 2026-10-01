@@ -33,6 +33,7 @@ class BeadsGuiPretty:
         self.ignore_bg_type = tk.StringVar(value="去除黑底")
         self.pre_quantize_colors = tk.IntVar(value=12)
         self.color_merge_threshold = tk.IntVar(value=30)
+        self.noise_removal = tk.BooleanVar(value=True)
 
         # 資料狀態
         self.original_image = None    # PIL Image（原圖）
@@ -256,6 +257,8 @@ class BeadsGuiPretty:
             textvariable=self.color_merge_threshold, width=10
         ).grid(row=9, column=1, sticky="ew", pady=6)
 
+        ttk.Checkbutton(settings, text="雜點消除", variable=self.noise_removal, style="App.TCheckbutton").grid(row=10, column=0, columnspan=2, sticky="w", pady=6)
+
         status = ttk.LabelFrame(left_wrap, text="狀態資訊", style="Section.TLabelframe", padding=16)
         status.pack(fill="x", pady=(14, 0))
 
@@ -347,11 +350,7 @@ class BeadsGuiPretty:
 
         self.color_text.insert(
             "1.0",
-            "這裡之後可以顯示：\n\n"
-            "1. 顏色名稱\n"
-            "2. RGB\n"
-            "3. 顆數\n"
-            "4. 色號對應\n"
+            "產生拼豆圖後，這裡會顯示用色統計（顏色名稱、RGB、顆數）。"
         )
 
     def _draw_placeholder(self, canvas, text):
@@ -460,6 +459,7 @@ class BeadsGuiPretty:
             ),
             pre_quantize_colors=self.pre_quantize_colors.get(),
             threshold=self.color_merge_threshold.get(),
+            noise_removal=self.noise_removal.get(),
             cell_size=self.cell_size.get(),
             show_grid=self.show_grid.get(),
             show_symbol=self.show_number.get(),
@@ -475,7 +475,7 @@ class BeadsGuiPretty:
                     keep_ratio=params["keep_ratio"],
                     ignore_bg=params["ignore_bg"],
                     pre_quantize_colors=params["pre_quantize_colors"],
-                    noise_removal=True,
+                    noise_removal=params["noise_removal"],
                 )
                 color_stats = build_color_statistics(result["color_counter"])
                 palette_map = result["palette_map"]
@@ -547,7 +547,7 @@ class BeadsGuiPretty:
             return
 
         stem = self.image_stem or "beads"
-        default_name = f"{stem}_beads_pattern_v2.png"
+        default_name = f"{stem}_beads_pattern.png"
 
         file_path = filedialog.asksaveasfilename(
             title="儲存拼豆圖",
@@ -570,7 +570,7 @@ class BeadsGuiPretty:
             return
 
         stem = self.image_stem or "beads"
-        default_name = f"{stem}_beads_colors_v2.csv"
+        default_name = f"{stem}_beads_colors.csv"
 
         file_path = filedialog.asksaveasfilename(
             title="匯出顏色統計 CSV",
@@ -595,17 +595,30 @@ def main():
         root = tk.Tk()
     app = BeadsGuiPretty(root)
 
+    _resize_original_job = None
+    _resize_pattern_job = None
+
     def on_resize_original(event):
-        if app.original_image is not None:
-            app._original_photo = app._display_on_canvas(app.original_canvas, app.original_image)
-        else:
-            app._draw_placeholder(app.original_canvas, "原圖顯示區")
+        nonlocal _resize_original_job
+        if _resize_original_job is not None:
+            root.after_cancel(_resize_original_job)
+        def _do():
+            if app.original_image is not None:
+                app._original_photo = app._display_on_canvas(app.original_canvas, app.original_image)
+            else:
+                app._draw_placeholder(app.original_canvas, "原圖顯示區")
+        _resize_original_job = root.after(150, _do)
 
     def on_resize_pattern(event):
-        if app.preview_image is not None:
-            app._pattern_photo = app._display_on_canvas(app.pattern_canvas, app.preview_image)
-        else:
-            app._draw_placeholder(app.pattern_canvas, "拼豆圖顯示區")
+        nonlocal _resize_pattern_job
+        if _resize_pattern_job is not None:
+            root.after_cancel(_resize_pattern_job)
+        def _do():
+            if app.preview_image is not None:
+                app._pattern_photo = app._display_on_canvas(app.pattern_canvas, app.preview_image)
+            else:
+                app._draw_placeholder(app.pattern_canvas, "拼豆圖顯示區")
+        _resize_pattern_job = root.after(150, _do)
 
     app.original_canvas.bind("<Configure>", on_resize_original)
     app.pattern_canvas.bind("<Configure>", on_resize_pattern)
