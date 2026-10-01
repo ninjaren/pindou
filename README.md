@@ -37,7 +37,7 @@ cd pindou
 python main.py
 ```
 
-或直接執行打包好的 `dist/pindou_v0.7.exe`（Windows，免安裝 Python）。
+或請至Release下載（Windows，免安裝 Python）。
 
 ---
 
@@ -139,7 +139,7 @@ pindou/
 pyinstaller pindou_v0.7.spec
 ```
 
-產出在 `dist/pindou_v0.7.exe`，單檔，不需安裝 Python。
+請至Release下載，不需安裝 Python。
 
 ---
 
